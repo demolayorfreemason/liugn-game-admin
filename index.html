@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>LIUGN Game Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4f1ea; --surface:#ffffff; --surface2:#ece7db; --ink:#1a1710; --ink2:#5c5648;
+    --line:#d8d0bd; --gold:#9a7b12; --gold-bg:#c9a227; --gold-ink:#1a1503;
+    --red:#a61e22; --red-bg:#fbe9e9; --green:#1d6b3c; --green-bg:#e3f2e7;
+    --chip:#e9e2cf; --shadow:0 1px 3px rgba(26,23,16,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12100c; --surface:#1d1a14; --surface2:#262218; --ink:#f2ecdc; --ink2:#b3ab97;
+      --line:#3a3527; --gold:#e3bc3a; --gold-bg:#c9a227; --gold-ink:#171204;
+      --red:#ff8a8d; --red-bg:#3a1d1e; --green:#7ed69c; --green-bg:#1c2f22;
+      --chip:#2c281c; --shadow:0 1px 3px rgba(0,0,0,.5);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+  button,select,input:not([type="checkbox"]){min-height:44px}
+  button{font-family:inherit;cursor:pointer}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 56px}
+  .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--gold-bg);padding-bottom:16px}
+  .topbar h1{font-size:clamp(26px,5vw,38px);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
+  .topbar h1 .glyph{color:var(--gold)}
+  .topbar p{margin:6px 0 0;color:var(--ink2);font-size:15px;max-width:58ch}
+  .owner-badge{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;white-space:nowrap}
+  .owner-badge b{color:var(--gold)}
+  /* Version switch */
+  .vswitch{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:20px 0 12px;border:2px solid var(--ink);border-radius:14px;overflow:hidden}
+  .vswitch button{border:none;background:var(--surface);color:var(--ink);padding:16px 12px;text-align:left;min-height:76px}
+  .vswitch button .vt{display:block;font-size:19px;font-weight:800;line-height:1.15}
+  .vswitch button .vd{display:block;font-size:13px;color:var(--ink2);margin-top:3px;font-weight:500}
+  .vswitch button[aria-pressed="true"]{background:var(--gold-bg);color:var(--gold-ink)}
+  .vswitch button[aria-pressed="true"] .vd{color:var(--gold-ink);opacity:.8}
+  .vswitch button.clean-on[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .vswitch button.clean-on[aria-pressed="true"] .vd{color:var(--bg);opacity:.75}
+  .vstatus{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--gold-bg);border-radius:10px;padding:13px 16px;font-size:14.5px;box-shadow:var(--shadow)}
+  .vstatus.clean{border-left-color:var(--red)}
+  .howbox{margin-top:18px;background:var(--red-bg);border:2px solid var(--red);border-radius:14px;padding:18px 20px}
+  .howbox h2{margin:0 0 6px;font-size:19px;font-weight:800}
+  .howbox p{margin:0 0 8px;font-size:15px;max-width:75ch}
+  .howbox ol{margin:8px 0 0;padding-left:22px;font-size:14.5px}
+  .howbox ol li{margin:4px 0}
+  .howbox .big{font-size:16.5px;font-weight:800}
+  .vstatus b{font-size:15.5px}
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0 4px}
+  @media(min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .stat .n{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12.5px;color:var(--ink2);margin-top:5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .sec-title{font-size:19px;font-weight:800;margin:30px 0 4px;letter-spacing:-.01em}
+  .sec-sub{color:var(--ink2);font-size:14.5px;margin:0 0 14px;max-width:72ch}
+  .btn{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:10px 16px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;text-align:center}
+  .btn:active{transform:translateY(1px)}
+  .btn.gold{background:var(--gold-bg);border-color:var(--gold-bg);color:var(--gold-ink)}
+  .btn.dark{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+  .btn.ghost{background:transparent}
+  .btn.small{min-height:40px;padding:6px 12px;font-size:13.5px;border-radius:8px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .quick{display:flex;flex-wrap:wrap;gap:10px}
+  .quick .btn{flex:1 1 200px}
+  /* Forms / panels */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .panel.goldtop{border-top:6px solid var(--gold-bg)}
+  .formgrid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:720px){.formgrid{grid-template-columns:1fr 1fr}}
+  .field label{display:block;font-weight:700;font-size:14px;margin-bottom:5px}
+  .field input[type="text"],.field input[type="number"]{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);padding:10px 14px;font-size:16px;font-family:inherit}
+  .field .hint{font-size:12.5px;color:var(--ink2);margin-top:4px}
+  .filebox{border:2px dashed var(--line);border-radius:12px;padding:16px;background:var(--surface2)}
+  .filebox input[type="file"]{width:100%;font-size:15px;min-height:48px;padding-top:10px}
+  .beatlist{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .beat{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .beat .bt{font-weight:800;font-size:16.5px}
+  .beat .bm{color:var(--ink2);font-size:13.5px;font-family:"IBM Plex Mono",monospace;overflow-wrap:anywhere}
+  .beat audio{width:100%;margin-top:10px;height:44px}
+  .beat .actions,.track .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .beat .actions .btn,.track .actions .btn{flex:1 1 118px}
+  @media(min-width:760px){.beat .actions .btn,.track .actions .btn{flex:0 0 auto}}
+  /* Toolbar / filters */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .search{flex:1 1 220px;display:flex}
+  .search input{flex:1;width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:10px 14px;font-size:16px;font-family:inherit}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .fchip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;min-height:40px}
+  .fchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  /* Tracks */
+  .tracks{display:flex;flex-direction:column;gap:8px}
+  .track{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+  .track.removed{opacity:.62}
+  .track .head{display:flex;gap:12px;align-items:flex-start}
+  .track .num{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;color:var(--ink2);padding-top:3px;min-width:26px}
+  .track .title{font-weight:700;font-size:16.5px;line-height:1.25;overflow-wrap:anywhere}
+  .track .artist{color:var(--ink2);font-size:14px;overflow-wrap:anywhere}
+  .track .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+  .badge{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;letter-spacing:.05em;padding:4px 9px;border-radius:999px;text-transform:uppercase}
+  .badge.mine{background:var(--green-bg);color:var(--green)}
+  .badge.other{background:var(--surface2);color:var(--ink2)}
+  .badge.out{background:var(--red-bg);color:var(--red)}
+  .badge.sale{background:var(--gold-bg);color:var(--gold-ink)}
+  .badge.dur{background:transparent;border:1px solid var(--line);color:var(--ink2)}
+  .pricerow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .pricerow label{font-size:13.5px;font-weight:700;color:var(--ink2)}
+  .pricerow input{width:110px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 10px;font-size:15px;font-family:"IBM Plex Mono",monospace;min-height:40px}
+  .empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px 18px;text-align:center;color:var(--ink2)}
+  /* Storefront */
+  .shelves{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:760px){.shelves{grid-template-columns:1fr 1fr}}
+  .shelf{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .shelf h3{margin:0 0 2px;font-size:18px;font-weight:800}
+  .shelf .ss{color:var(--ink2);font-size:13.5px;margin:0 0 12px}
+  .shopitem{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--line);padding:11px 0}
+  .shopitem:first-of-type{border-top:none}
+  .shopitem .st{font-weight:700;font-size:15px;line-height:1.25}
+  .shopitem .sa{color:var(--ink2);font-size:13px}
+  .price{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:16px;white-space:nowrap}
+  .price.free{color:var(--green);font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+  .shelf .none{color:var(--ink2);font-size:14px;padding:8px 0}
+  /* Settings */
+  .settings{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:18px}
+  .set-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  .set-row .lab{flex:1 1 240px}
+  .set-row .lab b{display:block;font-size:16px}
+  .set-row .lab span{color:var(--ink2);font-size:13.5px}
+  .switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 4px;cursor:pointer;font-weight:600;font-size:14.5px}
+  .switch input{width:26px;height:26px;accent-color:var(--gold-bg);flex:none}
+  input[type="range"]{width:min(260px,70vw);accent-color:var(--gold-bg);min-height:44px}
+  .volval{font-family:"IBM Plex Mono",monospace;font-weight:600;min-width:44px;text-align:right}
+  .volwrap{display:flex;align-items:center;gap:10px}
+  .export-bar{display:flex;flex-wrap:wrap;gap:10px}
+  .export-bar .btn{flex:1 1 200px}
+  .note{font-size:13.5px;color:var(--ink2);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
+  .note b{color:var(--ink)}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:var(--ink);color:var(--bg);padding:13px 20px;border-radius:12px;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;max-width:calc(100vw - 32px);text-align:center;z-index:50}
+  .toast.show{opacity:1}
+  footer{margin-top:36px;border-top:1px solid var(--line);padding-top:14px;color:var(--ink2);font-size:13px}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div>
+      <h1>LIUGN <span class="glyph">— 𐌻𐌹𐌿𐌲𐌽</span><br />Game Admin</h1>
+      <p>Your control panel and storefront in one: switch the game between its two versions, add your own beats, take songs in or out, and sell your music while you promote other artists.</p>
+    </div>
+    <div class="owner-badge">Owner only · <b>Sr. Br. Darryl Nacir Odige</b></div>
+  </header>
+
+  <section class="howbox" aria-label="How this admin works">
+    <h2>⚠ Read this first — how this admin works</h2>
+    <p class="big">Admin changes apply to the next upload, not to copies already uploaded.</p>
+    <p>This admin does <b>not</b> live-connect to a game file that&rsquo;s already on itch or any other site. A game uploaded as a plain HTML file stands alone — there&rsquo;s no server behind it — so nothing changed here can reach into that uploaded copy and change it after the fact.</p>
+    <ol>
+      <li><b>Make your changes here</b> — pick Full or Clean, add your beats, take songs out, set up the store.</li>
+      <li><b>Download the version file below.</b> That file is what the next build of the game is made from.</li>
+      <li><b>Build the new game file from that version file, then upload it to replace the old one.</b> Only then do players get the change.</li>
+    </ol>
+    <p style="margin-top:8px">For changes <i>inside</i> a copy people already have, the controls have to live in the game itself — and they do: the game&rsquo;s own menu has music on/off, music and people volume, and the playlist. This admin decides what ships in the next upload; the in-game controls handle the copy in a player&rsquo;s hands.</p>
+  </section>
+
+  <div class="vswitch" role="group" aria-label="Choose the active game version">
+    <button type="button" id="swFull" aria-pressed="true">
+      <span class="vt">🎵 FULL VERSION</span>
+      <span class="vd">With music — playlist, your beats, promoted artists</span>
+    </button>
+    <button type="button" id="swClean" class="clean-on" aria-pressed="false">
+      <span class="vt">🔇 CLEAN VERSION</span>
+      <span class="vd">No music at all — radios silent, nothing to question</span>
+    </button>
+  </div>
+  <div class="vstatus" id="vStatus"></div>
+
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><div class="n" id="statIn">19</div><div class="l">Songs in active version</div></div>
+    <div class="stat"><div class="n" id="statBeats">0</div><div class="l">Your beats added</div></div>
+    <div class="stat"><div class="n" id="statSale">0</div><div class="l">Listings in storefront</div></div>
+    <div class="stat"><div class="n" id="statTime">0:00</div><div class="l">Music runtime</div></div>
+  </section>
+
+  <h2 class="sec-title">Add your own beats</h2>
+  <p class="sec-sub">Music <b>you made yourself</b> — your beats, legally yours. Add a beat here and it goes into the Full Version playlist for the car radio and the mansion radio, and you can list it in the storefront below. Play it right here while you stream your gameplay, too.</p>
+  <section class="panel goldtop">
+    <div class="formgrid">
+      <div class="field">
+        <label for="beatTitle">Beat / song title</label>
+        <input type="text" id="beatTitle" placeholder="e.g. East Allam Nights" />
+      </div>
+      <div class="field">
+        <label for="beatPrice">Store price (USD, blank = not for sale yet)</label>
+        <input type="number" id="beatPrice" min="0" step="0.01" placeholder="e.g. 1.29" />
+      </div>
+      <div class="field">
+        <label for="beatBpm">BPM / notes (optional)</label>
+        <input type="text" id="beatBpm" placeholder="e.g. 92 BPM, dark keys" />
+      </div>
+      <div class="field">
+        <label>Your audio file</label>
+        <div class="filebox">
+          <input type="file" id="beatFile" accept="audio/*" aria-label="Choose your beat audio file" />
+          <div class="hint">MP3, WAV or M4A from your device. The file plays here for preview and streaming; its name goes into the version file so the build uses your real file.</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px">
+      <button class="btn gold" id="btnAddBeat" type="button" style="flex:1 1 220px">＋ Add beat to the game</button>
+    </div>
+    <div class="beatlist" id="beatList"></div>
+    <div class="empty" id="noBeats">No beats added yet. Your first beat you add shows up here, in the Full playlist, and in the store.</div>
+  </section>
+
+  <h2 class="sec-title">Music manager — the playlist</h2>
+  <p class="sec-sub">The 19-track playlist plus your beats. Switch a song off or remove it and it&rsquo;s out of the Full Version. Mark whose it is, and choose what goes in the store: <b>Sell</b> for your music, <b>Promote</b> for other artists you&rsquo;re putting on.</p>
+  <div class="quick" style="margin-bottom:16px">
+    <button class="btn" id="btnStripOthers" type="button">Remove all other artists&rsquo; songs</button>
+    <button class="btn" id="btnRestoreAll" type="button">Put every song back</button>
+    <button class="btn" id="btnReset" type="button">Reset playlist to original 19</button>
+  </div>
+  <div class="toolbar">
+    <div class="search"><input type="search" id="search" placeholder="Search a song or artist…" aria-label="Search songs" /></div>
+  </div>
+  <div class="filters" role="group" aria-label="Filter songs">
+    <button class="fchip" type="button" data-filter="all" aria-pressed="true">All songs</button>
+    <button class="fchip" type="button" data-filter="in" aria-pressed="false">In the game</button>
+    <button class="fchip" type="button" data-filter="removed" aria-pressed="false">Removed</button>
+    <button class="fchip" type="button" data-filter="mine" aria-pressed="false">Yours</button>
+    <button class="fchip" type="button" data-filter="other" aria-pressed="false">Other artists</button>
+    <button class="fchip" type="button" data-filter="store" aria-pressed="false">In the store</button>
+  </div>
+  <div class="tracks" id="trackList"></div>
+  <div class="empty" id="emptyState" hidden>No songs match that. Try a different search or filter.</div>
+
+  <h2 class="sec-title">Storefront</h2>
+  <p class="sec-sub">What the world sees: your music for sale, and other artists&rsquo; music you promote. Promoting artists here is how the admin pays — they get heard in the game and on your streams, you run the shelf. Set prices in the manager above, then download the catalog to use wherever you sell.</p>
+  <section class="shelves">
+    <div class="shelf">
+      <h3>🎤 Your Music — For Sale</h3>
+      <p class="ss">Songs and beats marked <b>Yours</b> + <b>Sell</b>.</p>
+      <div id="shelfMine"></div>
+    </div>
+    <div class="shelf">
+      <h3>📣 Promoted Artists</h3>
+      <p class="ss">Other artists marked <b>Promote</b> — featured in the game and on streams.</p>
+      <div id="shelfPromo"></div>
+    </div>
+  </section>
+  <div class="note"><b>Streaming:</b> hit play on any of your uploaded beats above during a gameplay stream and it&rsquo;s your music under your game — no claims to worry about. Promoted artists play from the Full Version playlist in-game the same way.</div>
+
+  <h2 class="sec-title">Simple game settings</h2>
+  <p class="sec-sub">Small defaults that ride along inside the version files. In the Clean Version, music settings are forced off — there is no music to set.</p>
+  <section class="settings">
+    <div class="set-row">
+      <div class="lab"><b>Music on at start</b><span>The radio starts playing when the game opens (Full Version only).</span></div>
+      <label class="switch"><input type="checkbox" id="setMusicOn" checked /> <span id="setMusicOnLab">On</span></label>
+    </div>
+    <div class="set-row">
+      <div class="lab"><b>Music volume</b><span>Starting volume for the car and mansion radios.</span></div>
+      <div class="volwrap"><input type="range" id="setMusicVol" min="0" max="100" value="80" aria-label="Music volume" /><span class="volval" id="musicVolVal">80%</span></div>
+    </div>
+    <div class="set-row">
+      <div class="lab"><b>People volume</b><span>Voices and crowd chatter — stays on in both versions.</span></div>
+      <div class="volwrap"><input type="range" id="setPeopleVol" min="0" max="100" value="90" aria-label="People volume" /><span class="volval" id="peopleVolVal">90%</span></div>
+    </div>
+    <div class="set-row">
+      <div class="lab"><b>Show song name on screen</b><span>The now-playing label when a track changes (Full Version only).</span></div>
+      <label class="switch"><input type="checkbox" id="setNowPlaying" checked /> <span id="setNowPlayingLab">On</span></label>
+    </div>
+  </section>
+
+  <h2 class="sec-title">Download your version files</h2>
+  <p class="sec-sub">This panel holds your changes while it&rsquo;s open. Download a file to keep them — the version file carries your choices into the next build of the game, and the catalog carries your store listings. These downloads are the instructions for that build, not the game itself: a build step still turns the version file into the new game upload that replaces the old one.</p>
+  <div class="export-bar">
+    <button class="btn gold" id="dlFull" type="button">⬇ Full Version file (.json)</button>
+    <button class="btn dark" id="dlClean" type="button">⬇ Clean Version file — no music (.json)</button>
+    <button class="btn" id="dlCatalog" type="button">⬇ Storefront catalog (.json)</button>
+    <button class="btn ghost" id="dlList" type="button">⬇ Song list (.txt)</button>
+  </div>
+  <div class="note"><b>Straight talk:</b> admin changes apply to the next upload, not to copies already uploaded. The Clean Version file lists an empty playlist with music off — build the game with it and there is no music in that copy at all. Nothing here edits a game file already sitting on itch or another site; the new version has to be uploaded to replace it. Storefront listings here are your catalog and prices — taking actual payment needs a checkout (your store or itch) using this catalog.</div>
+
+  <footer>LIUGN — 𐌻𐌹𐌿𐌲𐌽 · Game Admin + Storefront · East Allam. Full Version plays the playlist and your beats; Clean Version plays no music.</footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var ORIGINAL = [
+    {id:1,  artist:"Darryl Stax", title:"Yao Pose Stax Intro", dur:101, mine:true},
+    {id:2,  artist:"Sub-con5cience", title:"Dude, Please (Prod. by Kinetic Theory)", dur:209, mine:false},
+    {id:3,  artist:"Death Grips", title:"Beware", dur:353, mine:false},
+    {id:4,  artist:"D-WHY", title:"Killa (2012)", dur:213, mine:false},
+    {id:5,  artist:"KM Lynx feat. Donavan Johnson", title:"Anywhere", dur:194, mine:false},
+    {id:6,  artist:"Kalik Scientific", title:"Esotericism", dur:160, mine:false},
+    {id:7,  artist:"Unknown artist", title:"IridescentArmor", dur:120, mine:false},
+    {id:8,  artist:"Genelec & Master Kong", title:"Into The Light", dur:288, mine:false},
+    {id:9,  artist:"Future", title:"Low Life ft. The Weeknd", dur:323, mine:false},
+    {id:10, artist:"Lone Ninja", title:"Feudal Japan", dur:246, mine:false},
+    {id:11, artist:"OCD Moosh & Twist", title:"City Kids", dur:223, mine:false},
+    {id:12, artist:"Unknown artist", title:"Lost Without Trace", dur:239, mine:false},
+    {id:13, artist:"PCTAY", title:"Trappin", dur:146, mine:false},
+    {id:14, artist:"Philthy Rich", title:"SemCity MoneyMan", dur:270, mine:false},
+    {id:15, artist:"Unknown artist", title:"Propellers", dur:168, mine:false},
+    {id:16, artist:"Pusha T", title:"Untouchable", dur:190, mine:false},
+    {id:17, artist:"Too Fortunadamente — Plague Plenty x Kairo Myth", title:"Fire", dur:149, mine:false},
+    {id:18, artist:"wewantwraiths", title:"Voices", dur:220, mine:false},
+    {id:19, artist:"Wiz Khalifa", title:"I'm a Star", dur:187, mine:false}
+  ];
+
+  var tracks = [], beats = [], version = "full", filter = "all", query = "", beatSeq = 0;
+
+  function freshTracks(){
+    tracks = ORIGINAL.map(function(t){
+      return {id:t.id, artist:t.artist, title:t.title, dur:t.dur, mine:t.mine, on:true, removed:false, sell:t.mine, promo:!t.mine, price:""};
+    });
+  }
+  freshTracks();
+
+  function fmt(sec){ if(!sec && sec!==0) return "—"; sec=Math.round(sec); var m=Math.floor(sec/60), s=sec%60; return m+":"+(s<10?"0":"")+s; }
+  function sum(list){ return list.reduce(function(a,t){return a+(t.dur||0);},0); }
+  function inGameTracks(){ return tracks.filter(function(t){return t.on && !t.removed;}); }
+  function inGameBeats(){ return beats.filter(function(b){return b.on && !b.removed;}); }
+  function fullPlaylist(){ return inGameTracks().concat(inGameBeats()); }
+  function activePlaylist(){ return version==="clean" ? [] : fullPlaylist(); }
+  function money(v){ var n=parseFloat(v); return (isNaN(n)||v===""||v===null) ? null : n; }
+  function priceLabel(v){ var n=money(v); return n===null ? "For sale" : "$"+n.toFixed(2); }
+
+  var toastEl=document.getElementById("toast"), toastTimer=null;
+  function toast(msg){ toastEl.textContent=msg; toastEl.classList.add("show"); if(toastTimer)clearTimeout(toastTimer); toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2800); }
+
+  /* ---------- Version switch ---------- */
+  var swFull=document.getElementById("swFull"), swClean=document.getElementById("swClean"), vStatus=document.getElementById("vStatus");
+  function setVersion(v){
+    version=v;
+    swFull.setAttribute("aria-pressed", v==="full"?"true":"false");
+    swClean.setAttribute("aria-pressed", v==="clean"?"true":"false");
+    vStatus.className="vstatus"+(v==="clean"?" clean":"");
+    if(v==="clean"){
+      vStatus.innerHTML="<b>Active: CLEAN VERSION — no music at all.</b> The car radio and mansion radio stay silent in this build. Voices and people still play. Switch back to Full any time — your playlist and beats are kept, just not in this version.";
+    } else {
+      vStatus.innerHTML="<b>Active: FULL VERSION — with music.</b> Everything switched on below plays in this build: the playlist, your own beats, and the promoted artists.";
+    }
+    render();
+  }
+  swFull.addEventListener("click",function(){ setVersion("full"); toast("Full Version active — music on"); });
+  swClean.addEventListener("click",function(){ setVersion("clean"); toast("Clean Version active — no music at all"); });
+
+  /* ---------- Beats ---------- */
+  var beatListEl=document.getElementById("beatList"), noBeatsEl=document.getElementById("noBeats");
+  document.getElementById("btnAddBeat").addEventListener("click",function(){
+    var titleEl=document.getElementById("beatTitle");
+    var fileEl=document.getElementById("beatFile");
+    var file=(fileEl.files&&fileEl.files[0])?fileEl.files[0]:null;
+    var title=titleEl.value.trim() || (file?file.name.replace(/\.[^.]+$/,""):"");
+    if(!title){ toast("Give your beat a title first"); titleEl.focus(); return; }
+    beatSeq++;
+    var b={ bid:"B"+beatSeq, artist:"Darryl Stax", title:title, dur:0, mine:true, on:true, removed:false,
+            sell:true, promo:false, price:document.getElementById("beatPrice").value,
+            notes:document.getElementById("beatBpm").value.trim(), fileName:file?file.name:"(title only — add the file in the build)", url:null };
+    if(file){
+      b.url=URL.createObjectURL(file);
+      var probe=new Audio(); probe.preload="metadata"; probe.src=b.url;
+      probe.addEventListener("loadedmetadata",function(){ if(isFinite(probe.duration)){ b.dur=probe.duration; render(); } });
+    }
+    beats.push(b);
+    titleEl.value=""; document.getElementById("beatPrice").value=""; document.getElementById("beatBpm").value=""; fileEl.value="";
+    toast("Your beat added to the game: "+title);
+    render();
+  });
+
+  function renderBeats(){
+    beatListEl.innerHTML="";
+    noBeatsEl.style.display = beats.length? "none":"block";
+    beats.forEach(function(b){
+      var box=document.createElement("div"); box.className="beat";
+      var t=document.createElement("div"); t.className="bt"; t.textContent="🎧 "+b.title+(b.removed?" (removed)":"");
+      var m=document.createElement("div"); m.className="bm";
+      m.textContent="YOUR BEAT · "+b.fileName+(b.notes?" · "+b.notes:"")+(b.dur?" · "+fmt(b.dur):"");
+      box.appendChild(t); box.appendChild(m);
+      if(b.url && !b.removed){
+        var au=document.createElement("audio"); au.controls=true; au.src=b.url; au.preload="metadata";
+        au.setAttribute("aria-label","Play your beat: "+b.title);
+        box.appendChild(au);
+      }
+      var acts=document.createElement("div"); acts.className="actions";
+      if(!b.removed){
+        var on=document.createElement("button"); on.type="button"; on.className="btn small"+(b.on?" gold":"");
+        on.textContent=b.on?"✓ In the game":"Add back in";
+        on.addEventListener("click",function(){ b.on=!b.on; toast(b.on?"Beat in the game: "+b.title:"Beat out of the game: "+b.title); render(); });
+        var sell=document.createElement("button"); sell.type="button"; sell.className="btn small"+(b.sell?" gold":"");
+        sell.textContent=b.sell?"✓ For sale in store":"List for sale";
+        sell.addEventListener("click",function(){ b.sell=!b.sell; render(); });
+        var del=document.createElement("button"); del.type="button"; del.className="btn small"; del.textContent="Remove beat";
+        del.addEventListener("click",function(){ b.removed=true; toast("Beat removed: "+b.title); render(); });
+        acts.appendChild(on); acts.appendChild(sell); acts.appendChild(del);
+        var pr=document.createElement("div"); pr.className="pricerow";
+        var lab=document.createElement("label"); lab.textContent="Store price $";
+        var inp=document.createElement("input"); inp.type="number"; inp.min="0"; inp.step="0.01"; inp.value=b.price; inp.placeholder="1.29";
+        inp.setAttribute("aria-label","Store price for "+b.title);
+        inp.addEventListener("change",function(){ b.price=inp.value; renderStore(); renderStats(); });
+        pr.appendChild(lab); pr.appendChild(inp);
+        box.appendChild(acts); box.appendChild(pr);
+      } else {
+        var res=document.createElement("button"); res.type="button"; res.className="btn small gold"; res.textContent="Restore beat";
+        res.addEventListener("click",function(){ b.removed=false; b.on=true; render(); });
+        acts.appendChild(res); box.appendChild(acts);
+      }
+      beatListEl.appendChild(box);
+    });
+  }
+
+  /* ---------- Tracks ---------- */
+  var listEl=document.getElementById("trackList"), emptyEl=document.getElementById("emptyState");
+  function visible(t){
+    if(filter==="in"&&(t.removed||!t.on))return false;
+    if(filter==="removed"&&!t.removed)return false;
+    if(filter==="mine"&&!t.mine)return false;
+    if(filter==="other"&&t.mine)return false;
+    if(filter==="store"&&!(t.sell||t.promo))return false;
+    if(query && (t.artist+" "+t.title).toLowerCase().indexOf(query)===-1)return false;
+    return true;
+  }
+  function mkBtn(text,gold,fn,label){
+    var b=document.createElement("button"); b.type="button"; b.className="btn small"+(gold?" gold":""); b.textContent=text;
+    if(label)b.setAttribute("aria-label",label);
+    b.addEventListener("click",fn); return b;
+  }
+  function renderTracks(){
+    listEl.innerHTML=""; var shown=0;
+    tracks.forEach(function(t){
+      if(!visible(t))return; shown++;
+      var row=document.createElement("div"); row.className="track"+(t.removed?" removed":"");
+      var head=document.createElement("div"); head.className="head";
+      var num=document.createElement("div"); num.className="num"; num.textContent=String(t.id).padStart(2,"0");
+      var main=document.createElement("div");
+      var title=document.createElement("div"); title.className="title"; title.textContent=t.title;
+      var artist=document.createElement("div"); artist.className="artist"; artist.textContent=t.artist;
+      var meta=document.createElement("div"); meta.className="meta";
+      var b1=document.createElement("span"); b1.className="badge "+(t.mine?"mine":"other"); b1.textContent=t.mine?"★ Yours":"Other artist";
+      meta.appendChild(b1);
+      if(t.sell){ var bs=document.createElement("span"); bs.className="badge sale"; bs.textContent="For sale "+(money(t.price)!==null?"· $"+money(t.price).toFixed(2):""); meta.appendChild(bs); }
+      if(t.promo){ var bp=document.createElement("span"); bp.className="badge sale"; bp.textContent="Promoted"; meta.appendChild(bp); }
+      if(t.removed){ var b3=document.createElement("span"); b3.className="badge out"; b3.textContent="Removed"; meta.appendChild(b3); }
+      else if(!t.on){ var b4=document.createElement("span"); b4.className="badge out"; b4.textContent="Switched off"; meta.appendChild(b4); }
+      var bd=document.createElement("span"); bd.className="badge dur"; bd.textContent=fmt(t.dur); meta.appendChild(bd);
+      main.appendChild(title); main.appendChild(artist); main.appendChild(meta);
+      head.appendChild(num); head.appendChild(main); row.appendChild(head);
+
+      var acts=document.createElement("div"); acts.className="actions";
+      if(!t.removed){
+        acts.appendChild(mkBtn(t.on?"✓ In the game":"Add back in", t.on, function(){ t.on=!t.on; toast(t.on?"Back in the game: "+t.title:"Out of the game: "+t.title); render(); }));
+        acts.appendChild(mkBtn(t.mine?"Mark as other artist":"Mark as yours", false, function(){ t.mine=!t.mine; if(t.mine){t.sell=true;t.promo=false;} render(); }));
+        acts.appendChild(mkBtn(t.sell?"✓ Selling":"Sell it", t.sell, function(){ t.sell=!t.sell; render(); }));
+        acts.appendChild(mkBtn(t.promo?"✓ Promoting":"Promote it", t.promo, function(){ t.promo=!t.promo; render(); }));
+        acts.appendChild(mkBtn("Remove song", false, function(){ t.removed=true; toast("Removed: "+t.title); render(); }));
+        row.appendChild(acts);
+        var pr=document.createElement("div"); pr.className="pricerow";
+        var lab=document.createElement("label"); lab.textContent="Store price $";
+        var inp=document.createElement("input"); inp.type="number"; inp.min="0"; inp.step="0.01"; inp.value=t.price; inp.placeholder="1.29";
+        inp.setAttribute("aria-label","Store price for "+t.title);
+        inp.addEventListener("change",function(){ t.price=inp.value; render(); });
+        pr.appendChild(lab); pr.appendChild(inp); row.appendChild(pr);
+      } else {
+        acts.appendChild(mkBtn("Restore song", true, function(){ t.removed=false; t.on=true; toast("Restored: "+t.title); render(); }));
+        row.appendChild(acts);
+      }
+      listEl.appendChild(row);
+    });
+    emptyEl.hidden = shown!==0;
+  }
+
+  /* ---------- Storefront ---------- */
+  function shopItem(title,artist,priceTxt,free){
+    var d=document.createElement("div"); d.className="shopitem";
+    var l=document.createElement("div");
+    var st=document.createElement("div"); st.className="st"; st.textContent=title;
+    var sa=document.createElement("div"); sa.className="sa"; sa.textContent=artist;
+    l.appendChild(st); l.appendChild(sa);
+    var p=document.createElement("div"); p.className="price"+(free?" free":""); p.textContent=priceTxt;
+    d.appendChild(l); d.appendChild(p); return d;
+  }
+  function renderStore(){
+    var mineEl=document.getElementById("shelfMine"), promoEl=document.getElementById("shelfPromo");
+    mineEl.innerHTML=""; promoEl.innerHTML="";
+    var mineCount=0, promoCount=0;
+    tracks.forEach(function(t){
+      if(t.removed)return;
+      if(t.mine&&t.sell){ mineEl.appendChild(shopItem(t.title,t.artist,priceLabel(t.price),money(t.price)===null)); mineCount++; }
+      if(!t.mine&&t.promo){ promoEl.appendChild(shopItem(t.title,t.artist,"Featured",true)); promoCount++; }
+    });
+    beats.forEach(function(b){
+      if(b.removed)return;
+      if(b.sell){ mineEl.appendChild(shopItem(b.title+" (your beat)",b.artist,priceLabel(b.price),money(b.price)===null)); mineCount++; }
+    });
+    if(!mineCount){ var n=document.createElement("div"); n.className="none"; n.textContent="Nothing listed yet — mark one of your songs “Sell it”, or add a beat above."; mineEl.appendChild(n); }
+    if(!promoCount){ var n2=document.createElement("div"); n2.className="none"; n2.textContent="No artists being promoted right now."; promoEl.appendChild(n2); }
+    return mineCount+promoCount;
+  }
+
+  /* ---------- Stats / render ---------- */
+  function renderStats(listings){
+    var act=activePlaylist();
+    document.getElementById("statIn").textContent=act.length;
+    document.getElementById("statBeats").textContent=inGameBeats().length;
+    document.getElementById("statSale").textContent=listings;
+    document.getElementById("statTime").textContent=version==="clean"?"0:00":fmt(sum(act));
+  }
+  function render(){ renderBeats(); renderTracks(); var l=renderStore(); renderStats(l); }
+
+  /* Filters + search */
+  var chips=document.querySelectorAll(".fchip");
+  chips.forEach(function(chip){ chip.addEventListener("click",function(){
+    filter=chip.getAttribute("data-filter");
+    chips.forEach(function(c){ c.setAttribute("aria-pressed",c===chip?"true":"false"); });
+    renderTracks();
+  });});
+  document.getElementById("search").addEventListener("input",function(e){ query=e.target.value.trim().toLowerCase(); renderTracks(); });
+
+  /* Quick actions */
+  document.getElementById("btnStripOthers").addEventListener("click",function(){
+    var n=0; tracks.forEach(function(t){ if(!t.mine&&!t.removed){ t.removed=true; n++; } });
+    toast(n?("Removed "+n+" other artists' songs"):("No other artists' songs left to remove")); render();
+  });
+  document.getElementById("btnRestoreAll").addEventListener("click",function(){
+    tracks.forEach(function(t){ t.removed=false; t.on=true; });
+    beats.forEach(function(b){ b.removed=false; b.on=true; });
+    toast("Every song and beat is back in"); render();
+  });
+  document.getElementById("btnReset").addEventListener("click",function(){
+    freshTracks(); toast("Playlist back to the original 19 — your beats are kept"); render();
+  });
+
+  /* Settings */
+  function bindToggle(id,labId){ var el=document.getElementById(id),lab=document.getElementById(labId);
+    el.addEventListener("change",function(){ lab.textContent=el.checked?"On":"Off"; }); }
+  bindToggle("setMusicOn","setMusicOnLab"); bindToggle("setNowPlaying","setNowPlayingLab");
+  document.getElementById("setMusicVol").addEventListener("input",function(e){ document.getElementById("musicVolVal").textContent=e.target.value+"%"; });
+  document.getElementById("setPeopleVol").addEventListener("input",function(e){ document.getElementById("peopleVolVal").textContent=e.target.value+"%"; });
+
+  /* Downloads */
+  function download(name,text,type){
+    var blob=new Blob([text],{type:type}); var url=URL.createObjectURL(blob);
+    var a=document.createElement("a"); a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); },800);
+  }
+  function settingsObj(clean){
+    return {
+      musicEnabled: !clean,
+      musicOnAtStart: clean?false:document.getElementById("setMusicOn").checked,
+      musicVolume: clean?0:Number(document.getElementById("setMusicVol").value),
+      peopleVolume: Number(document.getElementById("setPeopleVol").value),
+      showNowPlaying: clean?false:document.getElementById("setNowPlaying").checked
+    };
+  }
+  function trackOut(t){ return {track:t.id, artist:t.artist, title:t.title, durationSeconds:t.dur, yours:t.mine, inStore:{forSale:t.sell, promoted:t.promo, priceUSD:money(t.price)}}; }
+  function beatOut(b){ return {beat:b.bid, artist:b.artist, title:b.title, durationSeconds:Math.round(b.dur||0), yours:true, yourOwnBeat:true, audioFile:b.fileName, notes:b.notes||"", inStore:{forSale:b.sell, promoted:false, priceUSD:money(b.price)}}; }
+  function versionFile(kind){
+    var clean = kind==="clean";
+    var list = clean? [] : fullPlaylist();
+    var data={
+      game:"Liugn — 𐌻𐌹𐌿𐌲𐌽",
+      version: clean? "Clean — No Music At All" : "Full — With Music",
+      madeWith:"LIUGN Game Admin", madeOn:new Date().toISOString().slice(0,10),
+      musicEnabled: !clean,
+      playsOn: clean? [] : ["Car radio / touchscreen playlist","Mansion radio","Stream play from admin (your beats)"],
+      settings: settingsObj(clean),
+      songCount: list.length, totalRuntime: fmt(sum(list)),
+      playlist: clean? [] : inGameTracks().map(trackOut).concat(inGameBeats().map(beatOut))
+    };
+    if(clean){ data.note="Empty playlist on purpose: this build contains no music at all."; }
+    return JSON.stringify(data,null,2);
+  }
+  document.getElementById("dlFull").addEventListener("click",function(){ download("liugn-version-full.json",versionFile("full"),"application/json"); toast("Full Version file downloaded — "+fullPlaylist().length+" songs and beats"); });
+  document.getElementById("dlClean").addEventListener("click",function(){ download("liugn-version-clean.json",versionFile("clean"),"application/json"); toast("Clean Version file downloaded — no music at all"); });
+  document.getElementById("dlCatalog").addEventListener("click",function(){
+    var cat={ store:"LIUGN Game Admin — Storefront", madeOn:new Date().toISOString().slice(0,10),
+      yourMusicForSale:[], promotedArtists:[] };
+    tracks.forEach(function(t){ if(t.removed)return;
+      if(t.mine&&t.sell)cat.yourMusicForSale.push({artist:t.artist,title:t.title,priceUSD:money(t.price)});
+      if(!t.mine&&t.promo)cat.promotedArtists.push({artist:t.artist,title:t.title,deal:"promotion feature"});
+    });
+    beats.forEach(function(b){ if(!b.removed&&b.sell)cat.yourMusicForSale.push({artist:b.artist,title:b.title+" (your beat)",audioFile:b.fileName,priceUSD:money(b.price)}); });
+    download("liugn-storefront-catalog.json",JSON.stringify(cat,null,2),"application/json");
+    toast("Storefront catalog downloaded");
+  });
+  document.getElementById("dlList").addEventListener("click",function(){
+    var lines=["LIUGN — 𐌻𐌹𐌿𐌲𐌽 · FULL VERSION playlist",""];
+    fullPlaylist().forEach(function(t,i){ lines.push((i+1)+". "+t.artist+" — "+t.title+" ("+fmt(t.dur)+")"+(t.mine?" [YOURS]":"")); });
+    lines.push("","CLEAN VERSION playlist: (none — no music at all)");
+    download("liugn-song-list.txt",lines.join("\n"),"text/plain");
+    toast("Song list downloaded");
+  });
+
+  setVersion("full");
+})();
+</script>
+</body>
+</html>
